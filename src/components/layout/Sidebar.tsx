@@ -6,24 +6,36 @@ import { useState, useEffect } from 'react';
 import { WorkLogModal } from '@/features/work-logs/WorkLogModal';
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-  { href: '/tasks', label: 'Tasks', icon: 'checklist' },
-  { href: '/branches', label: 'Branches', icon: 'fork_right' },
-  { href: '/projects', label: 'Projects', icon: 'folder_open' },
-  { href: '/reports/daily', label: 'Daily Report', icon: 'summarize' },
+  { id: 'dashboard', href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { id: 'tasks', href: '/tasks', label: 'Tasks', icon: 'checklist' },
+  { id: 'branches', href: '/branches', label: 'Branches', icon: 'fork_right' },
+  { id: 'projects', href: '/projects', label: 'Projects', icon: 'folder_open' },
+  { id: 'reports', href: '/reports/daily', label: 'Daily Report', icon: 'summarize' },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  activeTab?: string;
+  onSelectTab?: (tabId: string) => void;
+}
+
+export function Sidebar({ activeTab, onSelectTab }: SidebarProps) {
   const pathname = usePathname();
   const [workLogOpen, setWorkLogOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  useEffect(() => { setMobileOpen(false); }, [pathname]);
+  useEffect(() => { setMobileOpen(false); }, [pathname, activeTab]);
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
+
+  const handleNavClick = (id: string, e: React.MouseEvent) => {
+    if (onSelectTab) {
+      e.preventDefault();
+      onSelectTab(id);
+    }
+  };
 
   const NavContent = (
     <div className="flex flex-col h-full" style={{ background: 'var(--surface-container-lowest)', borderRight: '1px solid var(--outline-variant)' }}>
@@ -48,13 +60,14 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 space-y-1">
-        {navItems.map(({ href, label, icon }) => {
-          const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
+        {navItems.map(({ id, href, label, icon }) => {
+          const active = activeTab ? activeTab === id : (pathname === href || (href !== '/dashboard' && pathname.startsWith(href)));
           return (
-            <Link
-              key={href}
+            <a
+              key={id}
               href={href}
-              className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-colors"
+              onClick={(e) => handleNavClick(id, e)}
+              className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
               style={{
                 background: active ? 'var(--secondary-container)' : 'transparent',
                 color: active ? 'var(--on-secondary-container)' : 'var(--on-surface-variant)',
@@ -74,28 +87,29 @@ export function Sidebar() {
             >
               <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>{icon}</span>
               <span style={{ fontFamily: 'Geist', fontSize: '14px', fontWeight: 400 }}>{label}</span>
-            </Link>
+            </a>
           );
         })}
       </nav>
 
       {/* Settings Footer */}
       <div className="px-3 pb-6 pt-4" style={{ borderTop: '1px solid var(--outline-variant)' }}>
-        <Link
+        <a
           href="/settings"
+          onClick={(e) => handleNavClick('settings', e)}
           className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
           style={{
-            background: pathname === '/settings' ? 'var(--secondary-container)' : 'transparent',
-            color: pathname === '/settings' ? 'var(--on-secondary-container)' : 'var(--on-surface-variant)',
+            background: (activeTab ? activeTab === 'settings' : pathname === '/settings') ? 'var(--secondary-container)' : 'transparent',
+            color: (activeTab ? activeTab === 'settings' : pathname === '/settings') ? 'var(--on-secondary-container)' : 'var(--on-surface-variant)',
           }}
           onMouseEnter={(e) => {
-            if (pathname !== '/settings') {
+            if ((activeTab ? activeTab !== 'settings' : pathname !== '/settings')) {
               (e.currentTarget as HTMLElement).style.background = 'var(--surface-container-high)';
               (e.currentTarget as HTMLElement).style.color = 'var(--on-surface)';
             }
           }}
           onMouseLeave={(e) => {
-            if (pathname !== '/settings') {
+            if ((activeTab ? activeTab !== 'settings' : pathname !== '/settings')) {
               (e.currentTarget as HTMLElement).style.background = 'transparent';
               (e.currentTarget as HTMLElement).style.color = 'var(--on-surface-variant)';
             }
@@ -103,7 +117,7 @@ export function Sidebar() {
         >
           <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>settings</span>
           <span style={{ fontFamily: 'Geist', fontSize: '14px' }}>Settings</span>
-        </Link>
+        </a>
       </div>
     </div>
   );
@@ -132,13 +146,13 @@ export function Sidebar() {
       {/* Mobile Bottom Nav */}
       <nav className="fixed bottom-0 left-0 right-0 h-16 lg:hidden flex items-center justify-around z-40"
         style={{ background: 'var(--surface-container-lowest)', borderTop: '1px solid var(--outline-variant)' }}>
-        {navItems.slice(0, 2).map(({ href, icon }) => {
-          const active = pathname === href;
+        {navItems.slice(0, 2).map(({ id, href, icon }) => {
+          const active = activeTab ? activeTab === id : pathname === href;
           return (
-            <Link key={href} href={href} className="flex flex-col items-center gap-1"
+            <a key={id} href={href} onClick={(e) => handleNavClick(id, e)} className="flex flex-col items-center gap-1 cursor-pointer"
               style={{ color: active ? 'var(--primary)' : 'var(--on-surface-variant)' }}>
               <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>{icon}</span>
-            </Link>
+            </a>
           );
         })}
         {/* FAB center */}
@@ -151,13 +165,13 @@ export function Sidebar() {
             <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>add</span>
           </button>
         </div>
-        {navItems.slice(2, 4).map(({ href, icon }) => {
-          const active = pathname.startsWith(href);
+        {navItems.slice(2, 4).map(({ id, href, icon }) => {
+          const active = activeTab ? activeTab === id : pathname.startsWith(href);
           return (
-            <Link key={href} href={href} className="flex flex-col items-center gap-1"
+            <a key={id} href={href} onClick={(e) => handleNavClick(id, e)} className="flex flex-col items-center gap-1 cursor-pointer"
               style={{ color: active ? 'var(--primary)' : 'var(--on-surface-variant)' }}>
               <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>{icon}</span>
-            </Link>
+            </a>
           );
         })}
       </nav>

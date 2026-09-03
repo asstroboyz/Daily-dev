@@ -13,7 +13,7 @@ import { projectService } from '@/services/projectService';
 import type { Branch, BranchStatus } from '@/types';
 
 const schema = z.object({
-  project_id: z.string().min(1, 'Project is required'),
+  project_id: z.string().min(1, 'Project is required').refine((val) => Number(val) > 0, 'Please select a valid project'),
   name: z.string().min(1, 'Branch name is required'),
   base_branch: z.string().optional(),
   purpose: z.string().optional(),
@@ -39,10 +39,11 @@ export function BranchModal({ isOpen, onClose, branch, defaultProjectId }: Branc
     handleSubmit,
     reset,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { status: 'in_progress', base_branch: 'development' },
+    defaultValues: { status: 'in_progress', base_branch: 'development', project_id: '' },
   });
 
   const { data: projects = [] } = useQuery({
@@ -52,16 +53,29 @@ export function BranchModal({ isOpen, onClose, branch, defaultProjectId }: Branc
   });
 
   useEffect(() => {
-    if (branch && isOpen) {
-      setValue('project_id', String(branch.project_id));
+    if (!isOpen) return;
+
+    if (branch) {
+      const branchPid = branch.project_id ?? (branch as any).ProjectID;
+      setValue('project_id', String(branchPid));
       setValue('name', branch.name);
       setValue('base_branch', branch.base_branch || '');
       setValue('purpose', branch.purpose || '');
       setValue('status', branch.status);
       setValue('notes', branch.notes || '');
-    } else if (isOpen) {
+    } else {
+      const currentPid = getValues('project_id');
+      const firstProjId = projects.length > 0 ? (projects[0].id ?? (projects[0] as any).ID) : '';
+      const pidToUse = defaultProjectId
+        ? String(defaultProjectId)
+        : currentPid && currentPid !== '' && currentPid !== 'undefined'
+        ? currentPid
+        : firstProjId
+        ? String(firstProjId)
+        : '';
+
       reset({
-        project_id: defaultProjectId ? String(defaultProjectId) : '',
+        project_id: pidToUse,
         name: '',
         base_branch: 'development',
         purpose: '',
@@ -69,10 +83,15 @@ export function BranchModal({ isOpen, onClose, branch, defaultProjectId }: Branc
         notes: '',
       });
     }
-  }, [branch, isOpen, defaultProjectId, reset, setValue]);
+  }, [branch, isOpen, defaultProjectId, projects, reset, setValue, getValues]);
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
+      const pid = Number(data.project_id);
+      if (!pid || isNaN(pid)) {
+        throw new Error('Project ID is invalid');
+      }
+
       if (isEditing && branch) {
         return branchService.update(branch.id, {
           name: data.name,
@@ -83,7 +102,7 @@ export function BranchModal({ isOpen, onClose, branch, defaultProjectId }: Branc
         });
       } else {
         return branchService.create({
-          project_id: Number(data.project_id),
+          project_id: pid,
           name: data.name,
           base_branch: data.base_branch || undefined,
           purpose: data.purpose || undefined,
@@ -115,9 +134,12 @@ export function BranchModal({ isOpen, onClose, branch, defaultProjectId }: Branc
           <Label htmlFor="branch-project" required>Project</Label>
           <Select id="branch-project" {...register('project_id')} disabled={isEditing}>
             <option value="">Select project</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
+            {projects.map((p) => {
+              const projId = p.id ?? (p as any).ID;
+              return (
+                <option key={projId} value={projId}>{p.name}</option>
+              );
+            })}
           </Select>
           <ErrorMessage message={errors.project_id?.message} />
         </FormGroup>

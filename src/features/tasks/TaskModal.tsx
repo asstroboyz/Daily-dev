@@ -14,7 +14,7 @@ import { branchService } from '@/services/branchService';
 import type { Task, TaskPriority, TaskStatus } from '@/types';
 
 const schema = z.object({
-  project_id: z.string().min(1, 'Project is required'),
+  project_id: z.string().min(1, 'Project is required').refine((val) => Number(val) > 0, 'Please select a valid project'),
   branch_id: z.string().optional(),
   title: z.string().min(1, 'Task title is required'),
   description: z.string().optional(),
@@ -42,10 +42,11 @@ export function TaskModal({ isOpen, onClose, task, defaultProjectId }: TaskModal
     reset,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { status: 'todo', priority: 'normal' },
+    defaultValues: { status: 'todo', priority: 'normal', project_id: '' },
   });
 
   const selectedProjectId = watch('project_id');
@@ -63,7 +64,9 @@ export function TaskModal({ isOpen, onClose, task, defaultProjectId }: TaskModal
   });
 
   useEffect(() => {
-    if (task && isOpen) {
+    if (!isOpen) return;
+
+    if (task) {
       setValue('project_id', String(task.project_id));
       setValue('branch_id', task.branch_id ? String(task.branch_id) : '');
       setValue('title', task.title);
@@ -71,9 +74,18 @@ export function TaskModal({ isOpen, onClose, task, defaultProjectId }: TaskModal
       setValue('status', task.status);
       setValue('priority', task.priority);
       setValue('due_date', task.due_date ? task.due_date.split('T')[0] : '');
-    } else if (isOpen) {
+    } else {
+      const currentPid = getValues('project_id');
+      const pidToUse = defaultProjectId
+        ? String(defaultProjectId)
+        : currentPid && currentPid !== ''
+        ? currentPid
+        : projects.length > 0
+        ? String(projects[0].id)
+        : '';
+
       reset({
-        project_id: defaultProjectId ? String(defaultProjectId) : '',
+        project_id: pidToUse,
         branch_id: '',
         title: '',
         description: '',
@@ -82,10 +94,15 @@ export function TaskModal({ isOpen, onClose, task, defaultProjectId }: TaskModal
         due_date: '',
       });
     }
-  }, [task, isOpen, defaultProjectId, reset, setValue]);
+  }, [task, isOpen, defaultProjectId, projects, reset, setValue, getValues]);
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
+      const pid = Number(data.project_id);
+      if (!pid || isNaN(pid)) {
+        throw new Error('Project ID is invalid');
+      }
+
       if (isEditing && task) {
         return taskService.update(task.id, {
           branch_id: data.branch_id ? Number(data.branch_id) : null,
@@ -97,7 +114,7 @@ export function TaskModal({ isOpen, onClose, task, defaultProjectId }: TaskModal
         });
       } else {
         return taskService.create({
-          project_id: Number(data.project_id),
+          project_id: pid,
           branch_id: data.branch_id ? Number(data.branch_id) : null,
           title: data.title,
           description: data.description || undefined,

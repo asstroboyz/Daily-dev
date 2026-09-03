@@ -11,7 +11,7 @@ export type TaskFilter = {
 
 export const taskService = {
   getAll: async (filter?: TaskFilter): Promise<Task[]> => {
-    const { data } = await api.get<ApiResponse<Task[]>>('/tasks', { params: filter });
+    const { data } = await api.post<ApiResponse<Task[]>>('/tasks/search', filter || {});
     return data.data;
   },
 

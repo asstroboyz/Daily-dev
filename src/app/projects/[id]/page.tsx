@@ -16,30 +16,32 @@ import { formatDateShort } from '@/lib/utils';
 
 export default function ProjectDetailPage() {
   const params = useParams();
-  const projectId = Number(params.id);
+  const rawId = params?.id;
+  const projectId = typeof rawId === 'string' ? Number(rawId) : Array.isArray(rawId) ? Number(rawId[0]) : NaN;
+  const isValidId = !isNaN(projectId) && projectId > 0;
 
   const { data: project, isLoading, isError, refetch } = useQuery({
     queryKey: ['project', projectId],
     queryFn: () => projectService.getById(projectId),
-    enabled: !!projectId,
+    enabled: isValidId,
   });
 
   const { data: branches = [] } = useQuery({
     queryKey: ['branches', { project_id: projectId }],
     queryFn: () => branchService.getAll({ project_id: projectId }),
-    enabled: !!projectId,
+    enabled: isValidId,
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', { project_id: projectId }],
     queryFn: () => taskService.getAll({ project_id: projectId }),
-    enabled: !!projectId,
+    enabled: isValidId,
   });
 
   const { data: workLogs = [] } = useQuery({
     queryKey: ['work-logs', { project_id: projectId }],
     queryFn: () => workLogService.getAll({ project_id: projectId }),
-    enabled: !!projectId,
+    enabled: isValidId,
   });
 
   if (isLoading) return <LoadingState label="Loading project details..." />;

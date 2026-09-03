@@ -9,7 +9,7 @@ export type BranchFilter = {
 
 export const branchService = {
   getAll: async (filter?: BranchFilter): Promise<Branch[]> => {
-    const { data } = await api.get<ApiResponse<Branch[]>>('/branches', { params: filter });
+    const { data } = await api.post<ApiResponse<Branch[]>>('/branches/search', filter || {});
     return data.data;
   },
 

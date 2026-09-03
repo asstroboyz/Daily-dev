@@ -19,7 +19,9 @@ import type { Attachment } from '@/types';
 
 export default function TaskDetailPage() {
   const params = useParams();
-  const taskId = Number(params.id);
+  const rawId = params?.id;
+  const taskId = typeof rawId === 'string' ? Number(rawId) : Array.isArray(rawId) ? Number(rawId[0]) : NaN;
+  const isValidId = !isNaN(taskId) && taskId > 0;
   const queryClient = useQueryClient();
 
   const [editTaskOpen, setEditTaskOpen] = useState(false);
@@ -28,7 +30,7 @@ export default function TaskDetailPage() {
   const { data: task, isLoading, isError, refetch } = useQuery({
     queryKey: ['task', taskId],
     queryFn: () => taskService.getById(taskId),
-    enabled: !!taskId,
+    enabled: isValidId,
   });
 
   const deleteAttMutation = useMutation({

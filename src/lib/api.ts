@@ -27,4 +27,37 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+function normalizeData(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(normalizeData);
+  }
+  if (obj !== null && typeof obj === 'object') {
+    if ('ID' in obj && !('id' in obj)) {
+      obj.id = obj.ID;
+    }
+    if ('CreatedAt' in obj && !('created_at' in obj)) {
+      obj.created_at = obj.CreatedAt;
+    }
+    if ('UpdatedAt' in obj && !('updated_at' in obj)) {
+      obj.updated_at = obj.UpdatedAt;
+    }
+    if ('DeletedAt' in obj && !('deleted_at' in obj)) {
+      obj.deleted_at = obj.DeletedAt;
+    }
+    for (const key of Object.keys(obj)) {
+      if (typeof obj[key] === 'object' && obj[key] !== null) {
+        obj[key] = normalizeData(obj[key]);
+      }
+    }
+  }
+  return obj;
+}
+
+api.interceptors.response.use((response) => {
+  if (response.data) {
+    response.data = normalizeData(response.data);
+  }
+  return response;
+});
+
 export default api;

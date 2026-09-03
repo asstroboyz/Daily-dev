@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { Sidebar } from '@/components/layout/Sidebar';
-import { TopHeader } from '@/components/layout/TopHeader';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 
 export const metadata: Metadata = {
@@ -22,21 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body style={{ background: 'var(--background)', color: 'var(--on-surface)' }}>
         <QueryProvider>
-          {/* Desktop Sidebar */}
-          <Sidebar />
-
-          {/* Main Content Area - offset by sidebar on lg */}
-          <div className="lg:pl-[240px] min-h-screen flex flex-col">
-            {/* Fixed Top Header */}
-            <TopHeader />
-
-            {/* Page Content - pt-16 for header + pb-16 for mobile bottom nav */}
-            <main className="flex-1 pt-16 pb-20 lg:pb-8 px-4 lg:px-6 animate-fade-in">
-              <div className="max-w-[1400px] mx-auto">
-                {children}
-              </div>
-            </main>
-          </div>
+          <AppLayout>{children}</AppLayout>
         </QueryProvider>
       </body>
     </html>

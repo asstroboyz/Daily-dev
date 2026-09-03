@@ -15,24 +15,26 @@ import { formatDate } from '@/lib/utils';
 
 export default function BranchDetailPage() {
   const params = useParams();
-  const branchId = Number(params.id);
+  const rawId = params?.id;
+  const branchId = typeof rawId === 'string' ? Number(rawId) : Array.isArray(rawId) ? Number(rawId[0]) : NaN;
+  const isValidId = !isNaN(branchId) && branchId > 0;
 
   const { data: branch, isLoading, isError, refetch } = useQuery({
     queryKey: ['branch', branchId],
     queryFn: () => branchService.getById(branchId),
-    enabled: !!branchId,
+    enabled: isValidId,
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', { branch_id: branchId }],
     queryFn: () => taskService.getAll({ branch_id: branchId }),
-    enabled: !!branchId,
+    enabled: isValidId,
   });
 
   const { data: workLogs = [] } = useQuery({
     queryKey: ['work-logs', { branch_id: branchId }],
     queryFn: () => workLogService.getAll({ branch_id: branchId }),
-    enabled: !!branchId,
+    enabled: isValidId,
   });
 
   if (isLoading) return <LoadingState label="Loading branch details..." />;

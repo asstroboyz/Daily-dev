@@ -92,8 +92,8 @@ export default function TasksPage() {
             className="w-40"
           >
             <option value="">All Projects</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
+            {projects.map((p, idx) => (
+              <option key={p.id ?? idx} value={p.id}>{p.name}</option>
             ))}
           </Select>
 

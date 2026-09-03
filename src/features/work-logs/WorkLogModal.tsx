@@ -16,8 +16,8 @@ import { today } from '@/lib/utils';
 import { Paperclip, X } from 'lucide-react';
 
 const schema = z.object({
-  project_id: z.string().min(1, 'Project is required'),
-  task_id: z.string().min(1, 'Task is required'),
+  project_id: z.string().min(1, 'Project is required').refine((val) => Number(val) > 0, 'Please select a valid project'),
+  task_id: z.string().min(1, 'Task is required').refine((val) => Number(val) > 0, 'Please select a valid task'),
   branch_id: z.string().optional(),
   work_date: z.string().min(1, 'Work date is required'),
   title: z.string().min(1, 'Title is required'),

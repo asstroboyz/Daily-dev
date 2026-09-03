@@ -58,6 +58,11 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+select option {
+  background-color: #171f33;
+  color: #dae2fd;
+}
+
 /* Material Symbols Outlined default styling */
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined';

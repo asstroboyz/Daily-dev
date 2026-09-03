@@ -12,7 +12,7 @@ export type WorkLogFilter = {
 
 export const workLogService = {
   getAll: async (filter?: WorkLogFilter): Promise<WorkLog[]> => {
-    const { data } = await api.get<ApiResponse<WorkLog[]>>('/work-logs', { params: filter });
+    const { data } = await api.post<ApiResponse<WorkLog[]>>('/work-logs/search', filter || {});
     return data.data;
   },
 
